@@ -1,0 +1,57 @@
+import requests
+from bs4 import BeautifulSoup
+import tkinter as tk
+
+def search():
+    # Obtener los datos ingresados por el usuario
+    query = query_entry.get()
+    discount = discount_entry.get()
+
+    # Hacer la búsqueda en Mercado Libre Chile
+    url = f"https://listado.mercadolibre.cl/{query}"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    # Obtener los artículos con descuento mayor al ingresado por el usuario
+    results = []
+    for item in soup.find_all("li", class_="promotion-item"):
+        try:
+            item_discount = item.find("span", class_="promotion-percentage").text
+            item_discount = int(item_discount.strip(" %"))
+            if item_discount >= int(discount):
+                item_name = item.find("h2", class_="promotion-item__title").text
+                item_price = item.find("span", class_="promotion-item__price").text
+                results.append((item_name, item_price))
+        except AttributeError:
+            pass
+
+    # Mostrar los resultados en la interfaz gráfica
+    result_text.delete("1.0", tk.END)
+    if results:
+        for item in results:
+            result_text.insert(tk.END, f"{item[0]}\n{item[1]}\n\n")
+    else:
+        result_text.insert(tk.END, "No se encontraron resultados")
+
+# Crear la interfaz gráfica
+root = tk.Tk()
+root.title("Búsqueda de artículos con descuento")
+
+# Crear los elementos de la interfaz gráfica
+query_label = tk.Label(root, text="Búsqueda:")
+query_entry = tk.Entry(root, width=50)
+discount_label = tk.Label(root, text="Descuento mínimo (%):")
+discount_entry = tk.Entry(root, width=10)
+search_button = tk.Button(root, text="Buscar", command=search)
+result_text = tk.Text(root, height=20, width=60)
+
+# Alinear los elementos en la interfaz gráfica
+query_label.grid(row=0, column=0, padx=5, pady=5, sticky="W")
+query_entry.grid(row=0, column=1, padx=5, pady=5)
+discount_label.grid(row=1, column=0, padx=5, pady=5, sticky="W")
+discount_entry.grid(row=1, column=1, padx=5, pady=5)
+search_button.grid(row=2, column=1, padx=5, pady=5, sticky="E")
+result_text.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+
+# Iniciar la interfaz gráfica
+root.mainloop()
